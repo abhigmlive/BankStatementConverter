@@ -6,7 +6,7 @@ documents (read with OCR). There is **no server, no install, and nothing is
 uploaded** — every PDF is processed locally in the browser, so your financial
 data never leaves your device.
 
-Two extraction modes, like [bankstatementconverter.com](https://bankstatementconverter.com/):
+Two extraction modes:
 
 - **⚡ Automatic** — one click. The transaction table is detected on every page,
   columns are inferred from the layout, amounts are normalized, and multi-page
