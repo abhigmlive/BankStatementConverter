@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// Security Rules for the Bank Statement Converter.
+// These ARE the backend: they ensure every signed-in user can only read, create,
+// and delete their OWN conversion records. Deploy in Firebase console →
+// Firestore Database → Rules (or `firebase deploy --only firestore:rules`).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /conversions/{docId} {
+      // A user may read or delete only documents they own.
+      allow read, delete: if request.auth != null
+                          && resource.data.uid == request.auth.uid;
+
+      // On create, the new document's uid must match the signed-in user, and the
+      // serialised result must stay within a sane size (~600 KB; Firestore's hard
+      // limit is 1 MB per document).
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.tablesJson is string
+                    && request.resource.data.tablesJson.size() < 600000;
+
+      // Records are immutable once written.
+      allow update: if false;
+    }
+  }
+}

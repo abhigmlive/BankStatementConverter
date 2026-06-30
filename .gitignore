@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Node (dev/test only — the browser app uses CDN libraries, no install needed)
+node_modules/
+
+# OS / editors
+.DS_Store
+*.swp
+
+# Runtime
+/tmp/
+uvicorn.log
+uploads/
+
+# Generated sample PDFs (build with: python tests/make_samples.py)
+samples/*.pdf
