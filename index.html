@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bank Statement Converter — PDF to Excel / CSV (in your browser)</title>
+  <meta name="description" content="Convert bank statement PDFs to Excel or CSV entirely in your browser. Works on scanned/image PDFs via OCR. Nothing is uploaded — your files never leave your device." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🏦</text></svg>" />
+  <!-- Client-side engines, vendored locally — fully offline, no CDN, nothing to install -->
+  <script src="assets/vendor/tesseract/tesseract.min.js" defer></script>
+  <script src="assets/vendor/xlsx/xlsx.full.min.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🏦</span>
+      <div>
+        <h1>Bank Statement Converter</h1>
+        <p>PDF → Excel / CSV · runs 100% in your browser · scanned PDFs read with OCR</p>
+      </div>
+    </div>
+    <span class="badge privacy">🔒 Files never leave your device</span>
+  </header>
+
+  <main>
+    <section id="upload-section" class="card">
+      <div id="dropzone" class="dropzone">
+        <input type="file" id="file-input" accept="application/pdf" hidden />
+        <div class="dz-inner">
+          <div class="dz-icon">📄⬆️</div>
+          <p class="dz-title">Drop a bank statement PDF here</p>
+          <p class="dz-sub">or <button type="button" id="browse-btn" class="link-btn">browse your files</button></p>
+          <p class="dz-hint">Readable or scanned/image PDFs · processed locally, nothing is uploaded</p>
+        </div>
+      </div>
+      <div id="upload-status" class="status" hidden></div>
+    </section>
+
+    <section id="workspace" hidden>
+      <div class="file-bar card">
+        <div class="file-meta">
+          <strong id="file-name">statement.pdf</strong>
+          <span id="file-pages" class="muted"></span>
+          <span id="file-kind" class="badge"></span>
+        </div>
+        <div class="file-actions">
+          <button id="new-file-btn" class="btn subtle">Replace file</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="auto">⚡ Automatic</button>
+        <button class="tab" data-tab="manual">🎯 Manual mapping</button>
+      </div>
+
+      <div id="tab-auto" class="tab-panel active">
+        <div class="card">
+          <div class="panel-row">
+            <div class="controls">
+              <label class="check"><input type="checkbox" id="auto-ocr" /> Force OCR (for scanned pages)</label>
+              <label class="check"><input type="checkbox" id="auto-merge" checked /> Merge all pages into one table</label>
+            </div>
+            <button id="auto-run" class="btn primary">Extract automatically</button>
+          </div>
+          <p class="hint">Detects the transaction table on every page. Scanned pages are read with OCR automatically.</p>
+        </div>
+      </div>
+
+      <div id="tab-manual" class="tab-panel">
+        <div class="card manual-grid">
+          <div class="manual-viewer">
+            <div class="viewer-toolbar">
+              <button id="page-prev" class="btn subtle" title="Previous page">‹</button>
+              <span id="page-label" class="muted">Page 1</span>
+              <button id="page-next" class="btn subtle" title="Next page">›</button>
+              <span class="divider"></span>
+              <div class="tool-group" role="group" aria-label="Drawing tool">
+                <button class="tool active" data-tool="area" title="Draw the table area">▭ Area</button>
+                <button class="tool" data-tool="col" title="Add a column divider">┃ Column</button>
+                <button class="tool" data-tool="row" title="Add a row divider">━ Row</button>
+              </div>
+              <span class="divider"></span>
+              <button id="auto-cols" class="btn subtle" title="Guess column dividers from the data">✨ Auto columns</button>
+              <button id="clear-overlay" class="btn subtle">Clear</button>
+            </div>
+            <div id="stage" class="stage">
+              <canvas id="page-canvas"></canvas>
+              <canvas id="overlay"></canvas>
+            </div>
+            <p class="hint">
+              <b>Area</b>: drag a box around the table. <b>Column</b>: click to drop vertical dividers.
+              <b>Row</b>: click to drop horizontal dividers (optional — rows are detected automatically otherwise).
+            </p>
+          </div>
+
+          <aside class="manual-side">
+            <h3>Columns</h3>
+            <div id="col-names" class="col-names">
+              <p class="muted small">Add column dividers to name fields.</p>
+            </div>
+            <label class="check"><input type="checkbox" id="manual-header" checked /> First row is a header</label>
+            <label class="check"><input type="checkbox" id="manual-ocr" /> Read this page with OCR</label>
+            <label class="check"><input type="checkbox" id="manual-allpages" /> Apply template to every page</label>
+            <button id="manual-run" class="btn primary full">Extract with this template</button>
+            <p class="hint small">Tip: a template (area + columns) can be reused on every page of the statement.</p>
+          </aside>
+        </div>
+      </div>
+
+      <div id="results" class="card" hidden>
+        <div class="results-head">
+          <h3>Result <span id="result-meta" class="muted small"></span></h3>
+          <div class="results-actions">
+            <button id="dl-csv" class="btn">⬇ CSV</button>
+            <button id="dl-xlsx" class="btn primary">⬇ Excel</button>
+          </div>
+        </div>
+        <div id="result-tables" class="result-tables"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="spinner" class="spinner-overlay" hidden><div class="spinner"></div><span id="spinner-text">Working…</span></div>
+
+  <footer class="foot muted small">
+    100% client-side · no upload, no server, no install · powered by PDF.js, Tesseract.js &amp; SheetJS
+  </footer>
+
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
